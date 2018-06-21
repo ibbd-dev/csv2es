@@ -92,13 +92,12 @@ csv2es import --host=locahost --port=9200 --mapping=mapping_filename.json --inde
 		for {
 			row, err := reader.Read()
 			if err == io.EOF {
-				fmt.Printf("the file is over")
+				fmt.Println("the file is over")
 				break
 			}
 			if err != nil {
 				panic(err)
 			}
-			fmt.Printf("Row 1: %+v\n", row)
 
 			req := elastic.NewBulkIndexRequest().Index(cParams.IndexName).Type(cParams.DocType).Doc(row)
 			bulk.Add(req)
