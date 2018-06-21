@@ -118,7 +118,7 @@ csv2es import --host=locahost --port=9200 --mapping=mapping_filename.json --inde
 				count++
 			}
 		}
-		fmt.Printf("向es写入的数据量：%d，异常：%d", len(indexed), count)
+		fmt.Printf("向es写入的数据量：%d，异常：%d\n", len(indexed), count)
 	},
 }
 
