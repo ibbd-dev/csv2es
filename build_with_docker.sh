@@ -72,7 +72,7 @@ path=/var/www/build/elasticsearch/$version/examples
 if [ ! -d $path ]; then
     mkdir $path
 fi
-cp ./examples/test* $path/
+cp ./examples/* $path/
 
 # 本地编译
 go get github.com/ibbd-dev/csv2es/csv2es

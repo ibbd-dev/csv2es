@@ -1,0 +1,20 @@
+{
+    "properties": {
+        "level": {"type": "keyword", "index": true},
+        "area_code": {"type": "keyword", "index": true},
+        "city_code": {"type": "keyword", "index": true},
+        "zip_code": {"type": "keyword", "index": true},
+        "province": {"type": "text"},
+        "city": {"type": "text"},
+        "county": {"type": "text"},
+        "town": {"type": "text"},
+        "village": {"type": "text"},
+        "short_name": {"type": "text"},
+        "short_name_pinyin": {"type": "text", "analyzer": "whitespace", "search_analyzer": "whitespace"},
+        "merger_name": {"type": "text", "analyzer": "whitespace", "search_analyzer": "whitespace"},
+        "merger_name_pinyin": {"type": "keyword"},
+        "full_name": {"type": "text"},
+        "location": {"type": "geo_point", "index": true},
+        "search_content": {"type": "text", "analyzer": "whitespace", "search_analyzer": "whitespace"}
+    }
+}
