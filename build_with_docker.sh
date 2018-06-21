@@ -76,3 +76,9 @@ cp ./examples/* $path/
 
 # 本地编译
 go get github.com/ibbd-dev/csv2es/csv2es
+
+# 
+cd csv2es
+go build
+rm -f csv2es-$version
+mv csv2es csv2es-$version
