@@ -38,7 +38,7 @@ var importCmd = &cobra.Command{
 csv2es import --host=locahost --port=9200 --mapping=mapping_filename.json --index=test --type=test --csv=source.csv
 `,
 	Run: func(cmd *cobra.Command, args []string) {
-		// 创建输出文件
+		// 创建输入文件
 		in, err := os.Open(cParams.CsvFilename)
 		if err != nil {
 			panic(err)
@@ -88,6 +88,7 @@ csv2es import --host=locahost --port=9200 --mapping=mapping_filename.json --inde
 			}
 		}
 
+		var count int
 		bulk := conn.Bulk()
 		for {
 			row, err := reader.Read()
@@ -101,6 +102,12 @@ csv2es import --host=locahost --port=9200 --mapping=mapping_filename.json --inde
 
 			req := elastic.NewBulkIndexRequest().Index(cParams.IndexName).Type(cParams.DocType).Doc(row)
 			bulk.Add(req)
+
+			count++
+			if cParams.Size > 0 && count >= cParams.Size {
+				fmt.Printf("导出限制数量：%d\n", cParams.Size)
+				break
+			}
 		}
 
 		// 执行导入
@@ -110,15 +117,15 @@ csv2es import --host=locahost --port=9200 --mapping=mapping_filename.json --inde
 		}
 
 		// 统计写入状态
-		var count int
+		var errCount int
 		indexed := bulkResponse.Indexed()
 		for i, res := range indexed {
 			if res.Error != nil {
 				fmt.Printf("ERROR: %d, %+v\n", i, res.Error)
-				count++
+				errCount++
 			}
 		}
-		fmt.Printf("向es写入的数据量：%d，异常：%d\n", len(indexed), count)
+		fmt.Printf("向es写入的数据量：%d，异常：%d\n", count, errCount)
 	},
 }
 

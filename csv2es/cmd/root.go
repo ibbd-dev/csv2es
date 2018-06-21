@@ -25,6 +25,7 @@ import (
 
 type CommonParams struct {
 	Debug bool
+	Size  int // 导入导出的数量，0表示不限
 
 	// es config
 	Host      string
@@ -35,6 +36,10 @@ type CommonParams struct {
 	// import
 	DeleteIndex bool   // 是否删除原索引
 	Mapping     string // mapping 文件
+
+	// export
+	QueryField string
+	QueryValue string
 
 	CsvFilename string
 }
@@ -47,6 +52,11 @@ var rootCmd = &cobra.Command{
 	Version: "v1.0",
 	Short:   "import/export data beteen csv and es",
 	Long: `import/export data between csv and es
+
+实现功能：
+
+- [x] import: 从csv文件导入数据到es
+- [ ] export: 从es导出数据到csv文件
 
 Author:  Alex Cai
 BuildAt: 20180621
@@ -77,6 +87,8 @@ func init() {
 	rootCmd.PersistentFlags().StringVar(&cParams.IndexName, "index", "", "es index name")
 	rootCmd.PersistentFlags().StringVar(&cParams.DocType, "type", "", "es doc type")
 	rootCmd.PersistentFlags().StringVar(&cParams.CsvFilename, "csv", "", "csv filename")
+
+	rootCmd.PersistentFlags().IntVar(&cParams.Size, "size", 0, "导入导出的数量，默认为0，表示导入不限量，导出限制为1000")
 
 	// Cobra also supports local flags, which will only run
 	// when this action is called directly.
