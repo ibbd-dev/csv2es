@@ -14,4 +14,5 @@ if [ $# = 1 ]; then
     index="$1"
 fi
 
-$cmd export --host=100.115.147.50 --port=9200 --index="$index" --csv=./output.csv --size=10000
+$cmd export --host=100.115.147.50 --port=9200 --index="$index" --csv=./output.csv --size=300 --debug=true
+

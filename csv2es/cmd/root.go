@@ -49,14 +49,14 @@ var cParams CommonParams
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
 	Use:     "csv2es",
-	Version: "v1.0",
+	Version: "v1.1",
 	Short:   "import/export data beteen csv and es",
 	Long: `import/export data between csv and es
 
 实现功能：
 
 - [x] import: 从csv文件导入数据到es
-- [ ] export: 从es导出数据到csv文件
+- [x] export: 从es导出数据到csv文件
 
 Author:  Alex Cai
 BuildAt: 20180621
