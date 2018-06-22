@@ -49,7 +49,7 @@ var cParams CommonParams
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
 	Use:     "csv2es",
-	Version: "v1.1",
+	Version: "v1.1.1",
 	Short:   "import/export data beteen csv and es",
 	Long: `import/export data between csv and es
 

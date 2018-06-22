@@ -11,3 +11,5 @@ fi
 
 $cmd import --host=100.115.147.50 --port=9200 --index=test --type=test --mapping=./eyenlp_area2016.json --csv=./eyenlp_area2016.csv --delete-index=true
 
+# 查看mapping是否生效
+curl 100.115.147.50:9200/test/_mapping|json_pp

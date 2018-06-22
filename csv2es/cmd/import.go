@@ -63,13 +63,17 @@ csv2es import --host=locahost --port=9200 --mapping=mapping_filename.json --inde
 		if exists {
 			if cParams.DeleteIndex {
 				// 删除同名索引
+				fmt.Printf("begin to delete index: %s\n", cParams.IndexName)
 				if _, err = conn.DeleteIndex(cParams.IndexName).Do(ctx); err != nil {
 					panic(fmt.Errorf("delete index error: %s", cParams.IndexName))
 				}
 			}
-		} else {
+
 			// 创建索引
-			conn.CreateIndex(cParams.IndexName).Do(ctx)
+			fmt.Printf("begin to create index: %s\n", cParams.IndexName)
+			if _, err = conn.CreateIndex(cParams.IndexName).Do(ctx); err != nil {
+				panic(err)
+			}
 
 			if len(cParams.Mapping) > 0 {
 				bytes, err := ioutil.ReadFile(cParams.Mapping)
@@ -84,7 +88,10 @@ csv2es import --host=locahost --port=9200 --mapping=mapping_filename.json --inde
 					panic(err)
 				}
 
-				conn.PutMapping().Index(cParams.IndexName).BodyJson(mapping).Do(ctx)
+				fmt.Printf("begin to put index mapping: %s\n", cParams.IndexName)
+				if _, err := conn.PutMapping().Index(cParams.IndexName).Type(cParams.DocType).BodyJson(mapping).Do(ctx); err != nil {
+					panic(err)
+				}
 			}
 		}
 
