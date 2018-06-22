@@ -59,7 +59,7 @@ var rootCmd = &cobra.Command{
 - [x] export: 从es导出数据到csv文件
 
 Author:  Alex Cai
-BuildAt: 20180621
+BuildAt: 20180622
 `,
 	// Uncomment the following line if your bare application
 	// has an action associated with it:
