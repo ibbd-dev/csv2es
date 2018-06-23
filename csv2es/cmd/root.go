@@ -17,15 +17,14 @@ package cmd
 import (
 	"fmt"
 	"os"
-	"time"
 
 	"github.com/spf13/cobra"
-	"gopkg.in/olivere/elastic.v5"
 )
 
 type CommonParams struct {
-	Debug bool
-	Size  int // 导入导出的数量，0表示不限
+	Debug    bool
+	Limit    int // 导入导出的数量限制，0表示不限
+	BulkSize int // 批量导出导入时没批次的数量，默认为1000
 
 	// es config
 	Host      string
@@ -49,7 +48,7 @@ var cParams CommonParams
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
 	Use:     "csv2es",
-	Version: "v1.1.1",
+	Version: "v1.2",
 	Short:   "import/export data beteen csv and es",
 	Long: `import/export data between csv and es
 
@@ -58,8 +57,13 @@ var rootCmd = &cobra.Command{
 - [x] import: 从csv文件导入数据到es
 - [x] export: 从es导出数据到csv文件
 
+说明：
+
+- 支持elasticsearch版本为：5.*
+- 该工具不包含数据清洗的功能
+
 Author:  Alex Cai
-BuildAt: 20180622
+BuildAt: 20180623
 `,
 	// Uncomment the following line if your bare application
 	// has an action associated with it:
@@ -78,9 +82,6 @@ func Execute() {
 func init() {
 	cobra.OnInitialize(initConfig)
 
-	// Here you will define your flags and configuration settings.
-	// Cobra supports persistent flags, which, if defined here,
-	// will be global for your application.
 	rootCmd.PersistentFlags().BoolVar(&cParams.Debug, "debug", false, "debug mode")
 	rootCmd.PersistentFlags().StringVar(&cParams.Host, "host", "localhost", "es host")
 	rootCmd.PersistentFlags().IntVar(&cParams.Port, "port", 9200, "es port")
@@ -88,22 +89,10 @@ func init() {
 	rootCmd.PersistentFlags().StringVar(&cParams.DocType, "type", "", "es doc type")
 	rootCmd.PersistentFlags().StringVar(&cParams.CsvFilename, "csv", "", "csv filename")
 
-	rootCmd.PersistentFlags().IntVar(&cParams.Size, "size", 0, "导入导出的数量，默认为0，表示导入不限量，导出限制为1000")
-
-	// Cobra also supports local flags, which will only run
-	// when this action is called directly.
-	//rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	rootCmd.PersistentFlags().IntVar(&cParams.BulkSize, "bulk-size", 1000, "批量导入导出时，每批次的数量")
+	rootCmd.PersistentFlags().IntVar(&cParams.Limit, "limit", 0, "导入导出的数量限制，0表示不限")
 }
 
 // initConfig reads in config file and ENV variables if set.
 func initConfig() {
-}
-
-func getESConnect() (*elastic.Client, error) {
-	return elastic.NewClient(
-		elastic.SetURL(fmt.Sprintf("http://%s:%d", cParams.Host, cParams.Port)),
-		elastic.SetSniff(false),
-		elastic.SetHealthcheckInterval(10*time.Second),
-		elastic.SetMaxRetries(5),
-	)
 }

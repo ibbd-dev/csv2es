@@ -15,13 +15,14 @@
 package cmd
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"os"
 	"strings"
 
 	"github.com/ibbd-dev/go-csv"
+	"github.com/ibbd-dev/go-tools/es"
 	"github.com/spf13/cobra"
 	"gopkg.in/olivere/elastic.v5"
 )
@@ -30,7 +31,7 @@ import (
 var exportCmd = &cobra.Command{
 	Use:   "export",
 	Short: "export data to csv from es",
-	Long: `export data to csv from es",
+	Long: `从es导出数据到csv文件,
 `,
 	Example: `
 csv2es export --host=locahost --port=9200 --index=test --csv=source.csv
@@ -45,94 +46,73 @@ csv2es export --host=locahost --port=9200 --index=test --csv=source.csv
 		writer := goCsv.NewMapWriterSimple(out)
 
 		// es
-		conn, err := getESConnect()
-		ctx := context.Background()
-		exists, err := conn.IndexExists(cParams.IndexName).Do(ctx)
+		conn, err := es.NewClient(cParams.Host, cParams.Port, cParams.IndexName, cParams.DocType)
 		if err != nil {
-			panic(fmt.Errorf("check index exists error: %v", err.Error()))
+			panic(fmt.Errorf("es newClient: %v", err.Error()))
 		}
 
-		if !exists {
-			panic(fmt.Errorf("index %s is not exists", cParams.IndexName))
+		if cParams.BulkSize <= 0 {
+			cParams.BulkSize = 1000
 		}
-		if cParams.Size <= 0 {
-			cParams.Size = 1000
+		conn.SetLimit(cParams.Limit)
+		conn.SetBulkSize(cParams.BulkSize)
+		conn.SetDebug(cParams.Debug)
+		if cParams.Debug {
+			fmt.Printf("client config: %+v\n", conn)
 		}
 
-		search := conn.Search(cParams.IndexName)
+		var query elastic.Query
 		if len(cParams.QueryField) > 0 {
-			var query = elastic.NewTermQuery(cParams.QueryField, cParams.QueryValue)
-			search = search.Query(query)
+			query = elastic.NewTermQuery(cParams.QueryField, cParams.QueryValue)
+		}
+		if err = conn.SearchInit(query); err != nil {
+			panic(err)
 		}
 
-		searchResult, err := search.Size(cParams.Size).Do(ctx)
-		if err != nil {
-			panic(fmt.Errorf("search error: %v", err.Error()))
-		}
-
-		resTotal := searchResult.Hits.TotalHits
-		fmt.Printf("search research total: %d\n", resTotal)
-
-		if resTotal < 1 {
-			fmt.Println("search result is empty!")
-			return
-		}
-
-		var page int    // 记录当前页码
-		var count int64 // 记录总的记录数
-		for count < resTotal {
-			for i, hit := range searchResult.Hits.Hits {
-				if i == 0 && cParams.Debug {
-					fmt.Printf("[debug]row[0] = %s\n", string(*hit.Source))
-				}
-
-				var row = make(map[string]interface{})
-				err = json.Unmarshal(*hit.Source, &row)
-				if err != nil {
-					panic(fmt.Errorf("search %d: json unmarshal error: %v", i, err.Error()))
-				}
-				if count == 0 {
-					// 首行
-					var headers []string
-					for k, _ := range row {
-						headers = append(headers, k)
-					}
-
-					writer.SetHeader(headers)
-					if err = writer.WriteHeader(); err != nil {
-						panic(fmt.Errorf("csv writer header error: %s", err.Error()))
-					}
-					fmt.Printf("Fieldnames: %s\n", strings.Join(headers, ", "))
-				}
-
-				var strRow = make(map[string]string)
-				for k, v := range row {
-					if vv, ok := v.(string); ok {
-						strRow[k] = vv
-					} else if sv, err := json.Marshal(v); err != nil {
-						panic(fmt.Errorf("csv writer header error: %s", err.Error()))
-					} else {
-						strRow[k] = string(sv)
-						//strRow[k] = strings.Trim(strRow[k], "\"")
-					}
-				}
-
-				count += 1
-				writer.WriteRow(strRow)
+		var count int // 记录总的记录数
+		for {
+			row, err := conn.Read()
+			if err == io.EOF {
+				fmt.Println("read over")
+				break
 			}
-			writer.Flush()
-
-			// 下一页
-			searchResult, err = func(scrollId string) (*elastic.SearchResult, error) {
-				page++
-				fmt.Printf("search page: %d\n", page)
-				return conn.Scroll(cParams.IndexName).ScrollId(scrollId).Do(ctx)
-			}(searchResult.ScrollId)
 			if err != nil {
-				panic(fmt.Errorf("next scroll error: %s", err.Error()))
+				panic(err)
 			}
-		} // end of count < resTotal
 
+			if count == 0 {
+				// 首行
+				var headers []string
+				for k, _ := range row {
+					headers = append(headers, k)
+				}
+
+				writer.SetHeader(headers)
+				if err = writer.WriteHeader(); err != nil {
+					panic(fmt.Errorf("csv writer header error: %s", err.Error()))
+				}
+				fmt.Printf("Fieldnames: %s\n", strings.Join(headers, ", "))
+			}
+
+			var strRow = make(map[string]string)
+			for k, v := range row {
+				if vv, ok := v.(string); ok {
+					strRow[k] = vv
+				} else if sv, err := json.Marshal(v); err != nil {
+					panic(fmt.Errorf("csv writer header error: %s", err.Error()))
+				} else {
+					strRow[k] = string(sv)
+				}
+			}
+
+			count += 1
+			writer.WriteRow(strRow)
+			if count%cParams.BulkSize == 0 {
+				writer.Flush()
+			}
+		} // end of for
+
+		writer.Flush()
 		fmt.Printf("Total %d\n", count)
 	},
 }
@@ -140,24 +120,6 @@ csv2es export --host=locahost --port=9200 --index=test --csv=source.csv
 func init() {
 	rootCmd.AddCommand(exportCmd)
 
-	// Here you will define your flags and configuration settings.
-
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// exportCmd.PersistentFlags().String("foo", "", "A help for foo")
 	exportCmd.PersistentFlags().StringVar(&cParams.QueryField, "query-field", "", "过滤字段")
 	exportCmd.PersistentFlags().StringVar(&cParams.QueryValue, "query-value", "", "过滤字段对应的值")
-
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	// exportCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
-}
-
-func StringIn(str string, ss []string) bool {
-	for _, s := range ss {
-		if s == str {
-			return true
-		}
-	}
-	return false
 }
