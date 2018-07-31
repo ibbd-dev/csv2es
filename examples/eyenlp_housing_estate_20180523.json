@@ -1,0 +1,20 @@
+{
+    "properties": {
+        "province": {"type": "keyword", "index": false},
+        "city": {"type": "keyword", "index": false},
+        "county": {"type": "keyword", "index": false},
+        "town": {"type": "keyword", "index": false},
+        "address": {"type": "keyword", "index": false},
+        "standard_province": {"type": "keyword", "index": false},
+        "standard_city": {"type": "keyword", "index": false},
+        "standard_county": {"type": "keyword", "index": false},
+        "standard_town": {"type": "keyword", "index": false},
+        "standard_village": {"type": "keyword", "index": false},
+        "title": {"type": "keyword", "index": false},
+        "cityCode": {"type": "text", "index": true},
+        "search_title": {"type": "text", "index": true},
+        "aliases": {"type": "keyword", "index": false},
+        "lon": {"type": "float"},
+        "lat": {"type": "float"}
+    }
+}

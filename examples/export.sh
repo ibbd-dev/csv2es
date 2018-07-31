@@ -9,7 +9,7 @@ if [ -f csv2es ]; then
     cmd="./csv2es"
 fi
 
-index=test
+index=test_1
 if [ $# = 1 ]; then
     index="$1"
 fi
